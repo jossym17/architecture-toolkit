@@ -6,3 +6,4 @@ export * from './validation/index.js';
 export * from './storage/index.js';
 export * from './rfc/index.js';
 export * from './adr/index.js';
+export * from './decomposition/index.js';
