@@ -1,0 +1,44 @@
+# Kiro
+.kiro/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# TypeScript
+*.tsbuildinfo
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Architecture toolkit index (generated)
+.arch/.index/
+
+# Temporary files
+*.tmp
+*.temp
