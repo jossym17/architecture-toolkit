@@ -127,9 +127,6 @@ describe('EnhancedHealthService', () => {
               tags: ['tag']
             });
 
-            // Mock file store to return the artifact
-            vi.mocked(mockFileStore.load).mockResolvedValue(artifact);
-
             // Create mock outgoing links
             const outgoingLinks = Array.from({ length: outgoingLinksCount }, (_, i) => ({
               sourceId: artifact.id,
@@ -147,19 +144,19 @@ describe('EnhancedHealthService', () => {
               }));
             }
 
-            // Mock link service
-            vi.mocked(mockLinkService.getLinks).mockResolvedValue({
-              incoming: [],
-              outgoing: outgoingLinks
-            });
-
-            // Mock file store load for target artifacts
+            // Mock file store load - consistent implementation for all calls
             vi.mocked(mockFileStore.load).mockImplementation(async (id: string) => {
               if (id === artifact.id) return artifact;
               const staleTarget = staleTargets.find(t => t.id === id);
               if (staleTarget) return staleTarget;
               // Return non-stale artifact for other targets
               return createMockArtifact({ id, status: 'approved' });
+            });
+
+            // Mock link service
+            vi.mocked(mockLinkService.getLinks).mockResolvedValue({
+              incoming: [],
+              outgoing: outgoingLinks
             });
 
             // Create service with config
@@ -170,19 +167,27 @@ describe('EnhancedHealthService', () => {
               config
             );
 
-            const breakdown = await testService.getHealthBreakdown(artifact.id);
+            // Get health score - this internally calculates breakdown
             const healthScore = await testService.calculateHealth(artifact.id);
 
+            // Property: score should always be between 0 and 100
+            expect(healthScore.score).toBeGreaterThanOrEqual(0);
+            expect(healthScore.score).toBeLessThanOrEqual(100);
+
+            // Now get breakdown separately to verify consistency
+            const breakdown = await testService.getHealthBreakdown(artifact.id);
+            
             // Property: total penalty from breakdown
             const totalPenalty = breakdown.penalties.reduce((sum, p) => sum + p.points, 0);
             
             // Property: score should be 100 - penalties, bounded [0, 100]
             const expectedScore = Math.max(0, Math.min(100, 100 - totalPenalty));
             expect(healthScore.score).toBe(expectedScore);
-
-            // Property: score should always be between 0 and 100
-            expect(healthScore.score).toBeGreaterThanOrEqual(0);
-            expect(healthScore.score).toBeLessThanOrEqual(100);
+            
+            // Property: breakdown penalties should be non-negative
+            for (const penalty of breakdown.penalties) {
+              expect(penalty.points).toBeGreaterThanOrEqual(0);
+            }
           }
         ),
         { numRuns: 100 }
