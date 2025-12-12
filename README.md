@@ -125,6 +125,24 @@ arch plugin install plugin.json     # Install custom plugin
 arch plugin uninstall my-plugin     # Uninstall plugin
 ```
 
+### Impact Analysis
+
+```bash
+arch analyze impact RFC-0001        # Analyze impact of changing an artifact
+arch analyze graph                  # Show dependency graph (text)
+arch analyze graph --format mermaid # Export as Mermaid diagram
+arch analyze graph --format dot     # Export as GraphViz DOT
+arch analyze orphans RFC-0001       # Find orphaned artifacts if deleted
+```
+
+### Health Check
+
+```bash
+arch health                         # Run health check on all artifacts
+arch health --json                  # Output as JSON
+arch health --stale-days 60         # Custom stale threshold
+```
+
 ### Verify Integrity
 
 ```bash
