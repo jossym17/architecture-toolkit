@@ -5,6 +5,9 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "arch": "./dist/cli/index.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest --run",
@@ -27,6 +30,7 @@
     "vitest": "^1.1.0"
   },
   "dependencies": {
+    "commander": "^14.0.2",
     "yaml": "^2.3.4"
   }
 }
