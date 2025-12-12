@@ -1,0 +1,70 @@
+{
+  "id": "enterprise-rfc",
+  "name": "Enterprise RFC Template",
+  "artifactType": "rfc",
+  "sections": [
+    {
+      "name": "problemStatement",
+      "required": true,
+      "description": "Clear description of the problem being addressed",
+      "defaultContent": "## Problem Statement\n\n### Background\n[Provide context and history]\n\n### Current State\n[Describe the current situation]\n\n### Pain Points\n- [Pain point 1]\n- [Pain point 2]"
+    },
+    {
+      "name": "successCriteria",
+      "required": true,
+      "description": "Measurable success criteria",
+      "defaultContent": "## Success Criteria\n\n1. [Measurable criterion 1]\n2. [Measurable criterion 2]\n3. [Measurable criterion 3]"
+    },
+    {
+      "name": "options",
+      "required": true,
+      "description": "Options analysis with pros/cons",
+      "defaultContent": "## Options Analysis\n\n### Option 1: [Name]\n**Description:** [Brief description]\n\n**Pros:**\n- [Advantage 1]\n\n**Cons:**\n- [Disadvantage 1]\n\n**Estimated Cost:** [Cost estimate]\n**Estimated Timeline:** [Timeline]"
+    },
+    {
+      "name": "recommendedApproach",
+      "required": true,
+      "description": "Recommended solution with justification"
+    },
+    {
+      "name": "migrationPath",
+      "required": true,
+      "description": "Step-by-step migration plan"
+    },
+    {
+      "name": "rollbackPlan",
+      "required": true,
+      "description": "Rollback strategy if issues arise"
+    },
+    {
+      "name": "securityNotes",
+      "required": true,
+      "description": "Security considerations and compliance"
+    },
+    {
+      "name": "costModel",
+      "required": true,
+      "description": "Cost analysis including TCO"
+    },
+    {
+      "name": "timeline",
+      "required": true,
+      "description": "Implementation timeline with milestones"
+    },
+    {
+      "name": "riskAssessment",
+      "required": true,
+      "description": "Risk analysis and mitigation strategies"
+    },
+    {
+      "name": "stakeholders",
+      "required": true,
+      "description": "Affected teams and stakeholders"
+    },
+    {
+      "name": "signoffs",
+      "required": false,
+      "description": "Required approvals"
+    }
+  ]
+}

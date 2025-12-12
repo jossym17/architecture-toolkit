@@ -1,0 +1,45 @@
+{
+  "id": "migration-decomposition",
+  "name": "Migration Decomposition Plan Template",
+  "artifactType": "decomposition",
+  "sections": [
+    {
+      "name": "rationale",
+      "required": true,
+      "description": "Why this decomposition is needed",
+      "defaultContent": "## Rationale\n\n### Business Drivers\n- [Driver 1]\n\n### Technical Drivers\n- [Driver 1]\n\n### Expected Benefits\n- [Benefit 1]"
+    },
+    {
+      "name": "successMetrics",
+      "required": true,
+      "description": "How success will be measured",
+      "defaultContent": "## Success Metrics\n\n1. [Metric 1]: Target [value]\n2. [Metric 2]: Target [value]"
+    },
+    {
+      "name": "phases",
+      "required": true,
+      "description": "Decomposition phases with dependencies",
+      "defaultContent": "## Phases\n\n### Phase 1: Foundation\n- **Duration:** 2 weeks\n- **Dependencies:** None\n- **Deliverables:** [List deliverables]\n\n### Phase 2: Core Migration\n- **Duration:** 4 weeks\n- **Dependencies:** Phase 1\n- **Deliverables:** [List deliverables]"
+    },
+    {
+      "name": "teamModuleMapping",
+      "required": true,
+      "description": "Team ownership assignments"
+    },
+    {
+      "name": "migrationTasks",
+      "required": false,
+      "description": "Detailed migration tasks"
+    },
+    {
+      "name": "riskMitigation",
+      "required": true,
+      "description": "Risk identification and mitigation"
+    },
+    {
+      "name": "rollbackStrategy",
+      "required": true,
+      "description": "How to rollback if needed"
+    }
+  ]
+}

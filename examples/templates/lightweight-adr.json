@@ -1,0 +1,30 @@
+{
+  "id": "lightweight-adr",
+  "name": "Lightweight ADR Template",
+  "artifactType": "adr",
+  "sections": [
+    {
+      "name": "context",
+      "required": true,
+      "description": "Context and forces at play",
+      "defaultContent": "## Context\n\nWe need to decide [what decision needs to be made].\n\n### Forces\n- [Force 1]\n- [Force 2]"
+    },
+    {
+      "name": "decision",
+      "required": true,
+      "description": "The decision made",
+      "defaultContent": "## Decision\n\nWe will [describe the decision].\n\n### Rationale\n[Explain why this decision was made]"
+    },
+    {
+      "name": "consequences",
+      "required": true,
+      "description": "Consequences of the decision",
+      "defaultContent": "## Consequences\n\n### Positive\n- [Positive consequence 1]\n\n### Negative\n- [Negative consequence 1]\n\n### Neutral\n- [Neutral consequence 1]"
+    },
+    {
+      "name": "alternativesConsidered",
+      "required": false,
+      "description": "Alternatives that were considered"
+    }
+  ]
+}
