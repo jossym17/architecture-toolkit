@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { RFCService } from '../../services/rfc/rfc-service.js';
 import { RFCStatus } from '../../models/types.js';
+import { PromptService, InteractiveError } from '../../services/prompt/prompt-service.js';
 
 export function registerRfcCommands(program: Command): void {
   const rfc = program
@@ -13,8 +14,8 @@ export function registerRfcCommands(program: Command): void {
   rfc
     .command('create')
     .description('Create a new RFC')
-    .requiredOption('-t, --title <title>', 'RFC title')
-    .requiredOption('-o, --owner <owner>', 'RFC owner')
+    .option('-t, --title <title>', 'RFC title')
+    .option('-o, --owner <owner>', 'RFC owner')
     .option('--tags <tags>', 'Comma-separated tags')
     .option('-p, --path <path>', 'Base path', process.cwd())
     .action(async (options) => {
@@ -22,17 +23,57 @@ export function registerRfcCommands(program: Command): void {
         const service = new RFCService(options.path);
         await service.initialize();
         
-        const rfc = await service.create({
-          title: options.title,
-          owner: options.owner,
-          tags: options.tags ? options.tags.split(',').map((t: string) => t.trim()) : []
+        const promptService = new PromptService(options.path);
+        
+        // Build provided fields from command line options
+        const providedFields: Record<string, unknown> = {};
+        if (options.title) providedFields.title = options.title;
+        if (options.owner) providedFields.owner = options.owner;
+        if (options.tags) providedFields.tags = options.tags.split(',').map((t: string) => t.trim());
+        
+        // Get smart defaults for prompting
+        const smartDefaults = await promptService.getSmartDefaults();
+        
+        // Get existing RFCs for tag suggestions and title validation
+        const existingRfcs = await service.list();
+        const tagSuggestions = promptService.getTagSuggestions('rfc', existingRfcs);
+        
+        // Build prompt options with defaults and suggestions
+        const promptOptions = {
+          defaults: smartDefaults,
+          suggestions: { tags: tagSuggestions },
+          validators: {
+            title: (value: string) => {
+              const result = promptService.validateTitleUniqueness(value, existingRfcs);
+              if (!result.isUnique) {
+                const duplicates = result.duplicates.map(d => 
+                  `${d.id} (${d.matchType}${d.similarity ? ` ${Math.round(d.similarity * 100)}%` : ''})`
+                ).join(', ');
+                console.warn(`\n⚠ Warning: Similar titles found: ${duplicates}`);
+              }
+              return { valid: true }; // Allow creation but warn
+            }
+          }
+        };
+        
+        // Prompt for missing fields (will throw InteractiveError if non-TTY and fields missing)
+        const input = await promptService.promptForMissingFields('rfc', providedFields, promptOptions);
+        
+        const rfcDoc = await service.create({
+          title: input.title,
+          owner: input.owner,
+          tags: input.tags
         });
         
-        console.log(`✓ Created RFC: ${rfc.id}`);
-        console.log(`  Title: ${rfc.title}`);
-        console.log(`  Owner: ${rfc.owner}`);
-        console.log(`  Status: ${rfc.status}`);
+        console.log(`✓ Created RFC: ${rfcDoc.id}`);
+        console.log(`  Title: ${rfcDoc.title}`);
+        console.log(`  Owner: ${rfcDoc.owner}`);
+        console.log(`  Status: ${rfcDoc.status}`);
       } catch (error) {
+        if (error instanceof InteractiveError) {
+          console.error(`Error: ${error.message}`);
+          process.exit(1);
+        }
         console.error('Error creating RFC:', (error as Error).message);
         process.exit(1);
       }
