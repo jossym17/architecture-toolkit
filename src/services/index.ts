@@ -8,3 +8,4 @@ export * from './rfc/index.js';
 export * from './adr/index.js';
 export * from './decomposition/index.js';
 export * from './reference/index.js';
+export * from './template/index.js';
