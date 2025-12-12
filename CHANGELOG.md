@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Plugin system with lifecycle hooks (beforeCreate, afterCreate, beforeUpdate, afterUpdate, beforeDelete, afterDelete, onStatusChange)
+- Built-in plugins: JSON Export, CSV Export, HTML Export, Mermaid Diagrams, Audit Trail
+- Impact analysis for artifacts (`arch analyze impact <id>`)
+- Dependency graph visualization (text, Mermaid, GraphViz DOT formats)
+- Circular dependency detection
+- Health check system (`arch health`) with scoring
+- Statistics command (`arch stats`)
+- Export command with multiple formats (`arch export`)
+- Plugin management CLI (`arch plugin list/create/install/uninstall`)
+- Integrity verification with SHA-256 checksums (`arch verify`)
+- In-memory caching for improved performance
+- Zod schema validation for all artifact types
+- Centralized logging system
+- Docker support
+
+### Changed
+- Updated to Node.js 20+ requirement (vitest v4)
+- Improved error handling with domain-specific errors
+
+## [0.1.0] - 2025-12-12
+
+### Added
 - CLI interface with commander.js
 - RFC management (create, list, show, update, delete)
 - ADR management with supersession tracking
@@ -19,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Domain-specific error types
 - GitHub Actions CI workflow
 - ESLint and Prettier configuration
-- Comprehensive test suite
+- Comprehensive test suite (94 tests)
 
 ### Security
 - Added path traversal protection in FileStore
