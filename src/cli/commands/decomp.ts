@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { DecompositionPlanService } from '../../services/decomposition/decomposition-service.js';
+import { PromptService, InteractiveError } from '../../services/prompt/prompt-service.js';
 
 export function registerDecompCommands(program: Command): void {
   const decomp = program
@@ -12,19 +13,72 @@ export function registerDecompCommands(program: Command): void {
   decomp
     .command('create')
     .description('Create a new Decomposition Plan')
-    .requiredOption('-t, --title <title>', 'Plan title')
-    .requiredOption('-o, --owner <owner>', 'Plan owner')
+    .option('-t, --title <title>', 'Plan title')
+    .option('-o, --owner <owner>', 'Plan owner')
     .option('--tags <tags>', 'Comma-separated tags')
+    .option('--rationale <rationale>', 'Plan rationale (use editor for multi-line in interactive mode)')
     .option('-p, --path <path>', 'Base path', process.cwd())
     .action(async (options) => {
       try {
         const service = new DecompositionPlanService(options.path);
         await service.initialize();
         
+        const promptService = new PromptService(options.path);
+        
+        // Build provided fields from command line options
+        const providedFields: Record<string, unknown> = {};
+        if (options.title) providedFields.title = options.title;
+        if (options.owner) providedFields.owner = options.owner;
+        if (options.tags) providedFields.tags = options.tags.split(',').map((t: string) => t.trim());
+        
+        // Get smart defaults for prompting
+        const smartDefaults = await promptService.getSmartDefaults();
+        
+        // Get existing decomposition plans for tag suggestions and title validation
+        const existingPlans = await service.list();
+        const tagSuggestions = promptService.getTagSuggestions('decomposition', existingPlans);
+        
+        // Build prompt options with defaults and suggestions
+        const promptOptions = {
+          defaults: smartDefaults,
+          suggestions: { tags: tagSuggestions },
+          validators: {
+            title: (value: string) => {
+              const result = promptService.validateTitleUniqueness(value, existingPlans);
+              if (!result.isUnique) {
+                const duplicates = result.duplicates.map(d => 
+                  `${d.id} (${d.matchType}${d.similarity ? ` ${Math.round(d.similarity * 100)}%` : ''})`
+                ).join(', ');
+                console.warn(`\n⚠ Warning: Similar titles found: ${duplicates}`);
+              }
+              return { valid: true }; // Allow creation but warn
+            }
+          }
+        };
+        
+        // Prompt for missing fields (will throw InteractiveError if non-TTY and fields missing)
+        const input = await promptService.promptForMissingFields('decomposition', providedFields, promptOptions);
+        
+        // Handle rationale - prompt for multi-line input if not provided and in interactive mode
+        let rationale = options.rationale;
+        if (!rationale && promptService.isInteractive()) {
+          const shouldAddRationale = await promptService.promptForConfirmation(
+            'Would you like to add a rationale for this decomposition plan? (opens editor)'
+          );
+          if (shouldAddRationale) {
+            rationale = await promptService.promptForMultiLineContent(
+              'rationale',
+              'Enter the rationale for this decomposition:',
+              '[Describe the rationale for this decomposition]'
+            );
+          }
+        }
+        
         const plan = await service.create({
-          title: options.title,
-          owner: options.owner,
-          tags: options.tags ? options.tags.split(',').map((t: string) => t.trim()) : []
+          title: input.title,
+          owner: input.owner,
+          tags: input.tags,
+          rationale: rationale || undefined
         });
         
         console.log(`✓ Created Decomposition Plan: ${plan.id}`);
@@ -32,6 +86,10 @@ export function registerDecompCommands(program: Command): void {
         console.log(`  Owner: ${plan.owner}`);
         console.log(`  Phases: ${plan.phases.length}`);
       } catch (error) {
+        if (error instanceof InteractiveError) {
+          console.error(`Error: ${error.message}`);
+          process.exit(1);
+        }
         console.error('Error creating plan:', (error as Error).message);
         process.exit(1);
       }
