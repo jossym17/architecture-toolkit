@@ -79,7 +79,7 @@ function createTestDecomp(id: string, title: string = 'Test Decomposition'): Dec
     id,
     type: 'decomposition',
     title,
-    status: 'draft' as any,
+    status: 'draft' as unknown as DecompositionPlan['status'],
     createdAt: new Date(),
     updatedAt: new Date(),
     owner: 'test-owner',

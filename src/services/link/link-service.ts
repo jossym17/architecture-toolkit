@@ -6,7 +6,6 @@
  */
 
 import { FileStore } from '../storage/file-store.js';
-import { Artifact } from '../../models/artifact.js';
 import { Reference } from '../../models/reference.js';
 import { ArtifactType, ReferenceType } from '../../models/types.js';
 import { NotFoundError } from '../../core/errors.js';
