@@ -58,7 +58,8 @@
   },
   "dependencies": {
     "commander": "^14.0.2",
-    "yaml": "^2.3.4"
+    "yaml": "^2.3.4",
+    "zod": "^4.1.13"
   },
   "lint-staged": {
     "*.ts": [
