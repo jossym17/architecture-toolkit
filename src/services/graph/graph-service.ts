@@ -6,9 +6,8 @@
  */
 
 import type { ArtifactType, ArtifactStatus } from '../../models/types.js';
-import type { Artifact } from '../../models/artifact.js';
 import { FileStore } from '../storage/file-store.js';
-import { LinkService, type LinkInfo } from '../link/link-service.js';
+import { LinkService } from '../link/link-service.js';
 
 /**
  * Graph output format options
@@ -52,36 +51,12 @@ interface GraphEdge {
 }
 
 /**
- * Color mapping for artifact types (Mermaid)
- */
-const MERMAID_TYPE_COLORS: Record<ArtifactType, string> = {
-  rfc: '#3498db',      // Blue
-  adr: '#27ae60',      // Green
-  decomposition: '#e67e22' // Orange
-};
-
-/**
  * Color mapping for artifact types (DOT)
  */
 const DOT_TYPE_COLORS: Record<ArtifactType, string> = {
   rfc: 'blue',
   adr: 'green',
   decomposition: 'orange'
-};
-
-/**
- * Status to style mapping for Mermaid
- */
-const MERMAID_STATUS_STYLES: Record<string, string> = {
-  draft: 'stroke-dasharray: 5 5',
-  proposed: 'stroke-dasharray: 5 5',
-  review: 'stroke-dasharray: 3 3',
-  approved: '',
-  accepted: '',
-  implemented: '',
-  rejected: 'stroke: #999, fill: #eee',
-  deprecated: 'stroke: #999, fill: #eee',
-  superseded: 'stroke: #999, fill: #eee'
 };
 
 /**

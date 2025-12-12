@@ -8,14 +8,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import * as fs from 'fs/promises';
-import { GraphService, CircularDependency } from './graph-service.js';
+import { GraphService } from './graph-service.js';
 import { LinkService, LinkType, LINK_TYPES } from '../link/link-service.js';
 import { FileStore } from '../storage/file-store.js';
 import { Artifact } from '../../models/artifact.js';
 import { RFC } from '../../models/rfc.js';
 import { ADR } from '../../models/adr.js';
 import { DecompositionPlan } from '../../models/decomposition.js';
-import { ArtifactType, ArtifactStatus } from '../../models/types.js';
+import { ArtifactType } from '../../models/types.js';
 
 // Test directory for isolated file operations
 let testCounter = 0;
@@ -593,7 +593,6 @@ describe('GraphService', () => {
           formatArb,
           async (connectedIds, isolatedIds, rootId, linkType, format) => {
             // Ensure all IDs are unique
-            const allIds = new Set([rootId, ...connectedIds, ...isolatedIds]);
             const uniqueConnected = connectedIds.filter(id => id !== rootId && !isolatedIds.includes(id));
             const uniqueIsolated = isolatedIds.filter(id => id !== rootId && !connectedIds.includes(id));
             
@@ -713,7 +712,6 @@ describe('GraphService', () => {
    */
   describe('Property 10: Graph styling matches artifact properties', () => {
     // Type and status arbitraries
-    const artifactTypeArb = fc.constantFrom<ArtifactType>('rfc', 'adr', 'decomposition');
     const rfcStatusArb = fc.constantFrom<string>('draft', 'review', 'approved', 'rejected', 'implemented');
     const adrStatusArb = fc.constantFrom<string>('proposed', 'accepted', 'deprecated', 'superseded');
     
