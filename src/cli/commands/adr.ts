@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { ADRService } from '../../services/adr/adr-service.js';
 import { ADRStatus } from '../../models/types.js';
+import { PromptService, InteractiveError } from '../../services/prompt/prompt-service.js';
 
 export function registerAdrCommands(program: Command): void {
   const adr = program
@@ -13,26 +14,83 @@ export function registerAdrCommands(program: Command): void {
   adr
     .command('create')
     .description('Create a new ADR')
-    .requiredOption('-t, --title <title>', 'ADR title')
-    .requiredOption('-o, --owner <owner>', 'ADR owner')
+    .option('-t, --title <title>', 'ADR title')
+    .option('-o, --owner <owner>', 'ADR owner')
     .option('--tags <tags>', 'Comma-separated tags')
+    .option('--context <context>', 'ADR context (use editor for multi-line in interactive mode)')
     .option('-p, --path <path>', 'Base path', process.cwd())
     .action(async (options) => {
       try {
         const service = new ADRService(options.path);
         await service.initialize();
         
-        const adr = await service.create({
-          title: options.title,
-          owner: options.owner,
-          tags: options.tags ? options.tags.split(',').map((t: string) => t.trim()) : []
+        const promptService = new PromptService(options.path);
+        
+        // Build provided fields from command line options
+        const providedFields: Record<string, unknown> = {};
+        if (options.title) providedFields.title = options.title;
+        if (options.owner) providedFields.owner = options.owner;
+        if (options.tags) providedFields.tags = options.tags.split(',').map((t: string) => t.trim());
+        
+        // Get smart defaults for prompting
+        const smartDefaults = await promptService.getSmartDefaults();
+        
+        // Get existing ADRs for tag suggestions and title validation
+        const existingAdrs = await service.list();
+        const tagSuggestions = promptService.getTagSuggestions('adr', existingAdrs);
+        
+        // Build prompt options with defaults and suggestions
+        const promptOptions = {
+          defaults: smartDefaults,
+          suggestions: { tags: tagSuggestions },
+          validators: {
+            title: (value: string) => {
+              const result = promptService.validateTitleUniqueness(value, existingAdrs);
+              if (!result.isUnique) {
+                const duplicates = result.duplicates.map(d => 
+                  `${d.id} (${d.matchType}${d.similarity ? ` ${Math.round(d.similarity * 100)}%` : ''})`
+                ).join(', ');
+                console.warn(`\n⚠ Warning: Similar titles found: ${duplicates}`);
+              }
+              return { valid: true }; // Allow creation but warn
+            }
+          }
+        };
+        
+        // Prompt for missing fields (will throw InteractiveError if non-TTY and fields missing)
+        const input = await promptService.promptForMissingFields('adr', providedFields, promptOptions);
+        
+        // Handle context - prompt for multi-line input if not provided and in interactive mode
+        let context = options.context;
+        if (!context && promptService.isInteractive()) {
+          const shouldAddContext = await promptService.promptForConfirmation(
+            'Would you like to add context for this ADR? (opens editor)'
+          );
+          if (shouldAddContext) {
+            context = await promptService.promptForMultiLineContent(
+              'context',
+              'Enter the context and background for this decision:',
+              '[Describe the context and background for this decision]'
+            );
+          }
+        }
+        
+        const adrDoc = await service.create({
+          title: input.title,
+          owner: input.owner,
+          tags: input.tags,
+          context: context || undefined
         });
         
-        console.log(`✓ Created ADR: ${adr.id}`);
-        console.log(`  Title: ${adr.title}`);
-        console.log(`  Owner: ${adr.owner}`);
-        console.log(`  Status: ${adr.status}`);
+        console.log(`✓ Created ADR: ${adrDoc.id}`);
+        console.log(`  Title: ${adrDoc.title}`);
+        console.log(`  Owner: ${adrDoc.owner}`);
+        console.log(`  Status: ${adrDoc.status}`);
       } catch (error) {
+        if (error instanceof InteractiveError) {
+          console.error(`Error: ${error.message}`);
+          process.exit(1);
+        }
         console.error('Error creating ADR:', (error as Error).message);
         process.exit(1);
       }

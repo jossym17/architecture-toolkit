@@ -505,4 +505,37 @@ export class PromptService implements IPromptService {
 
     return confirmed;
   }
+
+  /**
+   * Prompt for multi-line content using the editor type
+   * Uses the user's configured EDITOR environment variable or falls back to inline input
+   * 
+   * @param fieldName - The name of the field being prompted
+   * @param message - The prompt message to display
+   * @param defaultValue - Optional default value to pre-populate
+   * @returns The multi-line content entered by the user
+   * @throws InteractiveError if TTY not available
+   */
+  async promptForMultiLineContent(
+    fieldName: string,
+    message: string,
+    defaultValue?: string
+  ): Promise<string> {
+    if (!this.isInteractive()) {
+      throw new InteractiveError([fieldName]);
+    }
+
+    // Use inquirer's editor type which respects EDITOR env var
+    const { content } = await inquirer.prompt([
+      {
+        type: 'editor',
+        name: 'content',
+        message,
+        default: defaultValue,
+        waitForUseInput: true
+      }
+    ]);
+
+    return content?.trim() || '';
+  }
 }
