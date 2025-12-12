@@ -98,6 +98,33 @@ arch template export <template-id> -o file.json
 arch template import file.json
 ```
 
+### Export
+
+```bash
+arch export --list-formats          # List available formats
+arch export --format json           # Export to JSON (stdout)
+arch export output.csv --format csv # Export to CSV file
+arch export report.html --format html # Export to HTML
+arch export diagram.mmd --format mermaid # Export Mermaid diagram
+```
+
+### Statistics
+
+```bash
+arch stats                          # Show artifact statistics
+arch stats --type rfc               # Stats for RFCs only
+arch stats --json                   # Output as JSON
+```
+
+### Plugins
+
+```bash
+arch plugin list                    # List all plugins
+arch plugin create "My Plugin"      # Create plugin scaffold
+arch plugin install plugin.json     # Install custom plugin
+arch plugin uninstall my-plugin     # Uninstall plugin
+```
+
 ### Verify Integrity
 
 ```bash

@@ -8,7 +8,10 @@ import { registerAdrCommands } from './commands/adr.js';
 import { registerDecompCommands } from './commands/decomp.js';
 import { registerSearchCommand } from './commands/search.js';
 import { registerTemplateCommands } from './commands/template.js';
+import { registerPluginCommands } from './commands/plugin.js';
 import { verifyCommand } from './commands/verify.js';
+import { exportCommand } from './commands/export.js';
+import { statsCommand } from './commands/stats.js';
 
 const program = new Command();
 
@@ -24,6 +27,9 @@ registerAdrCommands(program);
 registerDecompCommands(program);
 registerSearchCommand(program);
 registerTemplateCommands(program);
+registerPluginCommands(program);
 program.addCommand(verifyCommand);
+program.addCommand(exportCommand);
+program.addCommand(statsCommand);
 
 program.parse();
