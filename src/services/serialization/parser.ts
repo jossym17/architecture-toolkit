@@ -111,7 +111,7 @@ export function parseFrontmatter(input: string): ParseResult {
 /**
  * Extracts and validates frontmatter fields from parsed YAML
  */
-function extractFrontmatter(parsed: Record<string, unknown>, closingLine: number): ParsedFrontmatter {
+function extractFrontmatter(parsed: Record<string, unknown>, _closingLine: number): ParsedFrontmatter {
   // Validate required fields
   const requiredFields = ['id', 'type', 'title', 'status', 'createdAt', 'updatedAt', 'owner'];
   for (const field of requiredFields) {

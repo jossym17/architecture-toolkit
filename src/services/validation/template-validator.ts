@@ -4,7 +4,7 @@ import { Artifact } from '../../models/artifact.js';
 import { RFC } from '../../models/rfc.js';
 import { ADR } from '../../models/adr.js';
 import { DecompositionPlan } from '../../models/decomposition.js';
-import { Template, TemplateSection } from '../../models/template.js';
+import { Template } from '../../models/template.js';
 import { ArtifactType } from '../../models/types.js';
 import { ValidationResult, ValidationError } from '../../models/validation.js';
 

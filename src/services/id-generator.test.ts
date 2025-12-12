@@ -2,7 +2,6 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
-import * as path from 'path';
 import { IdGenerator } from './id-generator.js';
 
 describe('IdGenerator', () => {

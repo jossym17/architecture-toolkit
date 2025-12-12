@@ -4,7 +4,7 @@ import { Artifact } from '../../models/artifact.js';
 import { RFC } from '../../models/rfc.js';
 import { ADR } from '../../models/adr.js';
 import { DecompositionPlan } from '../../models/decomposition.js';
-import { ArtifactType, RFCStatus, ADRStatus } from '../../models/types.js';
+import { RFCStatus, ADRStatus } from '../../models/types.js';
 import { ValidationResult, ValidationError } from '../../models/validation.js';
 import { IdGenerator } from '../id-generator.js';
 

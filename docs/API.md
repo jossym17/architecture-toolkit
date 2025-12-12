@@ -285,6 +285,63 @@ type ADRStatus = 'proposed' | 'accepted' | 'deprecated' | 'superseded';
 
 ---
 
+## Integrity & Checksums
+
+The toolkit provides integrity verification for artifacts:
+
+```typescript
+import {
+  computeChecksum,
+  createIntegrityMetadata,
+  verifyIntegrity,
+  artifactsEqual
+} from 'architecture-toolkit';
+
+// Compute checksum for an artifact
+const checksum = computeChecksum(artifact);
+
+// Create integrity metadata
+const metadata = createIntegrityMetadata(artifact);
+
+// Verify integrity
+const result = verifyIntegrity(artifact, metadata);
+if (!result.valid) {
+  console.log(`Integrity check failed: ${result.reason}`);
+}
+
+// Compare two artifacts
+if (artifactsEqual(artifact1, artifact2)) {
+  console.log('Artifacts are identical');
+}
+```
+
+---
+
+## Caching
+
+FileStore includes built-in caching for list operations:
+
+```typescript
+const store = new FileStore({
+  baseDir: '.arch',
+  cache: {
+    ttl: 60000,      // 60 seconds TTL
+    maxEntries: 100, // Max cached queries
+    enabled: true    // Enable/disable cache
+  }
+});
+
+// Cache is automatically invalidated on save/delete
+await store.save(artifact);
+
+// Manual cache management
+store.clearCache();
+store.configureCache({ ttl: 30000 });
+const stats = store.getCacheStats();
+```
+
+---
+
 ## Error Handling
 
 The toolkit uses domain-specific errors:

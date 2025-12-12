@@ -98,6 +98,14 @@ arch template export <template-id> -o file.json
 arch template import file.json
 ```
 
+### Verify Integrity
+
+```bash
+arch verify <id>             # Verify single artifact
+arch verify all              # Verify all artifacts
+arch verify all --type rfc   # Verify all RFCs
+```
+
 ## Directory Structure
 
 After initialization, your project will have:

@@ -5,7 +5,6 @@ import { Artifact } from '../../models/artifact.js';
 import { RFC, Option, Signoff } from '../../models/rfc.js';
 import { ADR, Alternative } from '../../models/adr.js';
 import { DecompositionPlan, Phase, TeamModuleMapping, MigrationTask } from '../../models/decomposition.js';
-import { Reference } from '../../models/reference.js';
 
 /**
  * Serializes an artifact to Markdown with YAML frontmatter

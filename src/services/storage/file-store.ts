@@ -6,6 +6,7 @@ import { Artifact } from '../../models/artifact.js';
 import { ArtifactType } from '../../models/types.js';
 import { serialize } from '../serialization/serializer.js';
 import { deserialize } from '../serialization/deserializer.js';
+import { ArtifactCache, CacheConfig } from './cache.js';
 
 /**
  * Valid ID patterns for security validation
@@ -43,6 +44,8 @@ function validateId(id: string): boolean {
 export interface FileStoreConfig {
   /** Base directory for artifact storage (default: .arch) */
   baseDir: string;
+  /** Cache configuration */
+  cache?: Partial<CacheConfig>;
 }
 
 /**
@@ -84,9 +87,11 @@ const TYPE_DIRECTORIES: Record<ArtifactType, string> = {
  */
 export class FileStore {
   private config: FileStoreConfig;
+  private cache: ArtifactCache;
 
   constructor(config: Partial<FileStoreConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.cache = new ArtifactCache(config.cache);
   }
 
 
@@ -160,6 +165,9 @@ export class FileStore {
     await fs.mkdir(dir, { recursive: true });
     
     await fs.writeFile(filePath, content, 'utf-8');
+    
+    // Invalidate cache for this artifact type
+    this.cache.invalidateByType(artifact.type);
   }
 
   /**
@@ -213,6 +221,8 @@ export class FileStore {
     
     try {
       await fs.unlink(filePath);
+      // Invalidate cache for this artifact type
+      this.cache.invalidateByType(type);
       return true;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -230,6 +240,13 @@ export class FileStore {
    * @returns Array of artifacts matching the filters
    */
   async list(filters?: ArtifactFilters): Promise<Artifact[]> {
+    // Check cache first
+    const cacheKey = filters as Record<string, unknown> | undefined;
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const artifacts: Artifact[] = [];
     
     // Determine which directories to scan
@@ -271,6 +288,9 @@ export class FileStore {
 
     // Sort by creation date (newest first)
     artifacts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    // Store in cache
+    this.cache.set(artifacts, cacheKey);
     
     return artifacts;
   }
@@ -349,5 +369,26 @@ export class FileStore {
    */
   getBaseDir(): string {
     return this.config.baseDir;
+  }
+
+  /**
+   * Clears the artifact cache
+   */
+  clearCache(): void {
+    this.cache.invalidate();
+  }
+
+  /**
+   * Gets cache statistics
+   */
+  getCacheStats(): { size: number; enabled: boolean; ttl: number } {
+    return this.cache.getStats();
+  }
+
+  /**
+   * Configures the cache
+   */
+  configureCache(config: Partial<CacheConfig>): void {
+    this.cache.configure(config);
   }
 }

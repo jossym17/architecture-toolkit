@@ -14,6 +14,7 @@ const ID_PATTERNS: Record<string, RegExp> = {
 /**
  * Characters not allowed in filenames (Windows + Unix)
  */
+// eslint-disable-next-line no-control-regex
 const ILLEGAL_FILENAME_CHARS = /[<>:"/\\|?*\x00-\x1f]/g;
 
 /**
