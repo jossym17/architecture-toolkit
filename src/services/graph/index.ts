@@ -7,4 +7,10 @@
  * @module services/graph
  */
 
-export * from './graph-service.js';
+export {
+  GraphService,
+  type IGraphService,
+  type GraphFormat,
+  type GraphOptions,
+  type CircularDependency
+} from './graph-service.js';
