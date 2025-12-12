@@ -10,7 +10,6 @@ import * as fc from 'fast-check';
 import {
   EnhancedHealthService,
   EnhancedHealthConfig,
-  HealthBreakdown,
 } from './enhanced-health-service.js';
 import { FileStore } from '../storage/file-store.js';
 import { LinkService } from '../link/link-service.js';
@@ -174,29 +173,11 @@ describe('EnhancedHealthService', () => {
             const breakdown = await testService.getHealthBreakdown(artifact.id);
             const healthScore = await testService.calculateHealth(artifact.id);
 
-            // Calculate expected penalties
-            let expectedPenalty = 0;
-
-            // No links penalty
-            if (outgoingLinksCount === 0) {
-              expectedPenalty += config.noLinksPenalty;
-            }
-
-            // Stale reference penalties
-            expectedPenalty += staleReferencesCount * config.staleReferencePenalty;
-
-            // Staleness penalty
-            if (daysSinceUpdate > config.stalenessThresholdDays) {
-              const daysOver = daysSinceUpdate - config.stalenessThresholdDays;
-              const monthsOver = Math.floor(daysOver / 30);
-              expectedPenalty += monthsOver * config.stalenessPenaltyPerMonth;
-            }
-
-            // Property: total penalty from breakdown should match calculated penalty
-            const actualPenalty = breakdown.penalties.reduce((sum, p) => sum + p.points, 0);
+            // Property: total penalty from breakdown
+            const totalPenalty = breakdown.penalties.reduce((sum, p) => sum + p.points, 0);
             
             // Property: score should be 100 - penalties, bounded [0, 100]
-            const expectedScore = Math.max(0, Math.min(100, 100 - actualPenalty));
+            const expectedScore = Math.max(0, Math.min(100, 100 - totalPenalty));
             expect(healthScore.score).toBe(expectedScore);
 
             // Property: score should always be between 0 and 100
@@ -539,7 +520,6 @@ describe('EnhancedHealthService', () => {
 
             // Mock each artifact's health calculation based on scores
             // We'll simulate scores by controlling the penalties
-            let scoreIndex = 0;
             vi.mocked(mockFileStore.load).mockImplementation(async (id: string) => {
               const artifact = artifacts.find(a => a.id === id);
               return artifact || null;
