@@ -8,29 +8,62 @@
   "bin": {
     "arch": "./dist/cli/index.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jossym17/architecture-toolkit.git"
+  },
+  "homepage": "https://github.com/jossym17/architecture-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/jossym17/architecture-toolkit/issues"
+  },
+  "author": "jossym17",
+  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "test": "vitest --run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "test:coverage": "vitest --run --coverage",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky || true",
+    "prepublishOnly": "npm run build && npm run test"
   },
   "keywords": [
     "architecture",
     "rfc",
     "adr",
     "documentation",
-    "cli"
+    "cli",
+    "decision-records",
+    "decomposition"
   ],
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^1.1.0",
+    "eslint": "^9.0.0",
     "fast-check": "^3.15.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.2.0",
     "typescript": "^5.3.0",
+    "typescript-eslint": "^8.0.0",
     "vitest": "^1.1.0"
   },
   "dependencies": {
     "commander": "^14.0.2",
     "yaml": "^2.3.4"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }

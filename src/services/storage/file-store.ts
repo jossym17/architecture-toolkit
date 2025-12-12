@@ -8,6 +8,36 @@ import { serialize } from '../serialization/serializer.js';
 import { deserialize } from '../serialization/deserializer.js';
 
 /**
+ * Valid ID patterns for security validation
+ */
+const VALID_ID_PATTERNS: Record<string, RegExp> = {
+  rfc: /^RFC-\d{4}$/,
+  adr: /^ADR-\d{4}$/,
+  decomposition: /^DECOMP-\d{4}$/
+};
+
+/**
+ * Validates an artifact ID to prevent path traversal attacks
+ */
+function validateId(id: string): boolean {
+  if (!id || typeof id !== 'string') return false;
+  
+  // Check for path traversal attempts
+  if (id.includes('..') || id.includes('/') || id.includes('\\')) {
+    return false;
+  }
+  
+  // Check for null bytes
+  if (id.includes('\0')) {
+    return false;
+  }
+  
+  // Validate against known patterns
+  const upperCaseId = id.toUpperCase();
+  return Object.values(VALID_ID_PATTERNS).some(pattern => pattern.test(upperCaseId));
+}
+
+/**
  * Configuration for the file store
  */
 export interface FileStoreConfig {
@@ -114,9 +144,14 @@ export class FileStore {
    * Saves an artifact to the filesystem
    * 
    * @param artifact - The artifact to save
-   * @throws Error if the artifact cannot be saved
+   * @throws Error if the artifact cannot be saved or ID is invalid
    */
   async save(artifact: Artifact): Promise<void> {
+    // Security: Validate ID before using in file path
+    if (!validateId(artifact.id)) {
+      throw new Error(`Invalid artifact ID: ${artifact.id}`);
+    }
+    
     const filePath = this.getArtifactPath(artifact.id, artifact.type);
     const content = serialize(artifact);
     
@@ -134,6 +169,11 @@ export class FileStore {
    * @returns The loaded artifact or null if not found
    */
   async load(id: string): Promise<Artifact | null> {
+    // Security: Validate ID before using in file path
+    if (!validateId(id)) {
+      return null;
+    }
+    
     const type = this.getTypeFromId(id);
     if (!type) {
       return null;
@@ -159,6 +199,11 @@ export class FileStore {
    * @returns true if deleted, false if not found
    */
   async delete(id: string): Promise<boolean> {
+    // Security: Validate ID before using in file path
+    if (!validateId(id)) {
+      return false;
+    }
+    
     const type = this.getTypeFromId(id);
     if (!type) {
       return false;
@@ -279,6 +324,11 @@ export class FileStore {
    * @returns true if the artifact exists
    */
   async exists(id: string): Promise<boolean> {
+    // Security: Validate ID before using in file path
+    if (!validateId(id)) {
+      return false;
+    }
+    
     const type = this.getTypeFromId(id);
     if (!type) {
       return false;

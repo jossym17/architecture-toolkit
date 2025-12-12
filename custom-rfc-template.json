@@ -1,0 +1,57 @@
+{
+  "id": "default-rfc",
+  "name": "Default RFC Template",
+  "artifactType": "rfc",
+  "sections": [
+    {
+      "name": "problemStatement",
+      "required": true,
+      "description": "Problem statement describing the issue to be addressed"
+    },
+    {
+      "name": "successCriteria",
+      "required": true,
+      "description": "List of success criteria"
+    },
+    {
+      "name": "options",
+      "required": true,
+      "description": "Options analysis"
+    },
+    {
+      "name": "recommendedApproach",
+      "required": true,
+      "description": "Recommended approach"
+    },
+    {
+      "name": "migrationPath",
+      "required": true,
+      "description": "Migration path"
+    },
+    {
+      "name": "rollbackPlan",
+      "required": true,
+      "description": "Rollback plan"
+    },
+    {
+      "name": "securityNotes",
+      "required": true,
+      "description": "Security considerations"
+    },
+    {
+      "name": "costModel",
+      "required": true,
+      "description": "Cost model"
+    },
+    {
+      "name": "timeline",
+      "required": true,
+      "description": "Timeline"
+    },
+    {
+      "name": "signoffs",
+      "required": false,
+      "description": "Sign-off tracking"
+    }
+  ]
+}
