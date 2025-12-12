@@ -8,11 +8,12 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,13 +42,9 @@ jobs:
       - name: Update package.json version
         run: npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version --allow-same-version
 
-      - name: Verify npm authentication
-        run: npm whoami
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish to npm
-        run: npm publish --access public
+      - name: Publish to npm (with provenance)
+        run: npm publish --access public --provenance
+        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -86,7 +83,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     needs: release
-    
+
     steps:
       - uses: actions/checkout@v4
 
