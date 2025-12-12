@@ -7,12 +7,11 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
-import { 
-  PromptService, 
-  InteractiveError, 
+import {
+  PromptService,
+  InteractiveError,
   REQUIRED_FIELDS,
   type ArtifactInput,
-  type TitleValidationResult
 } from './prompt-service.js';
 import type { ArtifactType } from '../../models/types.js';
 
