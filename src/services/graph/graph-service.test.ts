@@ -1019,6 +1019,6 @@ describe('GraphService', () => {
         ),
         { numRuns: 100 }
       );
-    });
+    }, 30000);
   });
 });

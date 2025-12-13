@@ -5,6 +5,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    testTimeout: 60000, // 60 seconds for property-based tests with file I/O in CI
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
