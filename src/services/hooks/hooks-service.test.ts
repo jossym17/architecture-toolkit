@@ -5,12 +5,12 @@
  * for the git hooks functionality.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import * as fc from 'fast-check';
 import * as fs from 'fs/promises';
-import { GitHooksService, HooksValidationResult } from './hooks-service.js';
+import { GitHooksService } from './hooks-service.js';
 import { FileStore } from '../storage/file-store.js';
-import { Artifact } from '../../models/artifact.js';
+import type { Artifact } from '../../models/artifact.js';
 import { RFC } from '../../models/rfc.js';
 import { ADR } from '../../models/adr.js';
 import { DecompositionPlan } from '../../models/decomposition.js';

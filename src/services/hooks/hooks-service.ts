@@ -252,7 +252,7 @@ export class GitHooksService implements IGitHooksService {
 
     if (options.ci) {
       // CI script generation is handled separately via generateCIScript
-      console.log('Use generateCIScript() to get CI configuration');
+      // The caller should use generateCIScript() to get CI configuration
     }
   }
 
