@@ -23,3 +23,5 @@ export * from './collaboration/index.js';
 export * from './timeline/index.js';
 export * from './discovery/index.js';
 export * from './metrics/index.js';
+export * from './config/index.js';
+export * from './batch/index.js';
