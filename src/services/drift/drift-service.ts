@@ -52,6 +52,58 @@ export interface DriftReport {
 }
 
 /**
+ * Detailed remediation suggestion for a violation
+ * 
+ * Requirements: 8.5
+ */
+export interface RemediationSuggestion {
+  /** ADR ID that was violated */
+  adrId: string;
+  /** ADR title for context */
+  adrTitle: string;
+  /** The constraint that was violated */
+  constraint: string;
+  /** High-level action to take */
+  action: string;
+  /** Priority based on number of violations */
+  priority: 'high' | 'medium' | 'low';
+  /** List of affected files */
+  affectedFiles: string[];
+  /** Step-by-step remediation instructions */
+  steps: string[];
+}
+
+/**
+ * Detailed drift report with all information
+ * 
+ * Requirements: 8.3, 8.5
+ */
+export interface DetailedDriftReport {
+  /** Summary statistics */
+  summary: {
+    totalViolations: number;
+    affectedADRs: string[];
+    affectedFiles: string[];
+    timestamp: string;
+  };
+  /** Detailed violation information */
+  violations: Array<{
+    adrId: string;
+    adrTitle: string;
+    constraint: string;
+    codeLocations: Array<{
+      file: string;
+      line: number;
+      snippet: string;
+    }>;
+  }>;
+  /** Remediation suggestions with steps */
+  remediations: RemediationSuggestion[];
+  /** Simple text suggestions */
+  suggestions: string[];
+}
+
+/**
  * Drift rule configuration from config.yaml
  */
 export interface DriftRule {
@@ -543,6 +595,67 @@ export class DriftDetectionService implements IDriftDetectionService {
   }
 
   /**
+   * Generate detailed remediation suggestions for all violations
+   * 
+   * Requirements: 8.5
+   */
+  generateRemediationSuggestions(report: DriftReport): RemediationSuggestion[] {
+    const suggestions: RemediationSuggestion[] = [];
+
+    for (const violation of report.violations) {
+      const suggestion = this.createDetailedSuggestion(violation);
+      suggestions.push(suggestion);
+    }
+
+    return suggestions;
+  }
+
+  /**
+   * Create a detailed remediation suggestion for a single violation
+   * 
+   * Requirements: 8.5
+   */
+  private createDetailedSuggestion(violation: DriftViolation): RemediationSuggestion {
+    const { adrId, adrTitle, constraint, violations } = violation;
+    
+    let action: string;
+    let priority: 'high' | 'medium' | 'low';
+    let steps: string[];
+
+    if (constraint.startsWith('Forbidden import:')) {
+      const forbidden = constraint.replace('Forbidden import:', '').trim();
+      action = `Remove all usages of '${forbidden}'`;
+      priority = violations.length > 5 ? 'high' : violations.length > 2 ? 'medium' : 'low';
+      steps = [
+        `Identify all files importing '${forbidden}'`,
+        `Replace with the technology specified in ${adrId}`,
+        `Update any dependent code that relies on ${forbidden}-specific APIs`,
+        `Run tests to verify the migration is complete`,
+        `Remove ${forbidden} from package dependencies if no longer needed`
+      ];
+    } else {
+      action = `Update code to comply with: ${constraint}`;
+      priority = 'medium';
+      steps = [
+        `Review ${adrId} (${adrTitle}) for detailed requirements`,
+        `Identify all non-compliant code locations`,
+        `Refactor code to meet the architectural constraint`,
+        `Verify compliance with automated tests`
+      ];
+    }
+
+    return {
+      adrId,
+      adrTitle,
+      constraint,
+      action,
+      priority,
+      affectedFiles: [...new Set(violations.map(v => v.file))],
+      steps
+    };
+  }
+
+  /**
    * Parse ADRs for technology constraints (public method for testing)
    * 
    * Requirements: 8.1
@@ -583,7 +696,9 @@ export class DriftDetectionService implements IDriftDetectionService {
     const lines: string[] = [];
     lines.push(`Architecture Drift Report`);
     lines.push(`${'='.repeat(50)}`);
-    lines.push(`Found ${report.violations.length} violation(s)\n`);
+    
+    const summary = this.getSummary(report);
+    lines.push(`Found ${summary.totalViolations} violation(s) across ${summary.affectedFiles.length} file(s)\n`);
 
     for (const violation of report.violations) {
       lines.push(`ADR: ${violation.adrId} - ${violation.adrTitle}`);
@@ -606,6 +721,123 @@ export class DriftDetectionService implements IDriftDetectionService {
     }
 
     return lines.join('\n');
+  }
+
+  /**
+   * Format drift report for CI output (GitHub Actions, GitLab CI, etc.)
+   * 
+   * Requirements: 8.3, 8.5
+   */
+  formatReportForCI(report: DriftReport): string {
+    if (report.violations.length === 0) {
+      return '✅ No architecture drift detected.';
+    }
+
+    const lines: string[] = [];
+    const summary = this.getSummary(report);
+    
+    lines.push(`❌ Architecture Drift Detected`);
+    lines.push(`Found ${summary.totalViolations} violation(s) in ${summary.affectedFiles.length} file(s)`);
+    lines.push('');
+
+    // Group violations by ADR for cleaner CI output
+    const violationsByADR = new Map<string, DriftViolation[]>();
+    for (const violation of report.violations) {
+      const key = violation.adrId;
+      if (!violationsByADR.has(key)) {
+        violationsByADR.set(key, []);
+      }
+      violationsByADR.get(key)!.push(violation);
+    }
+
+    for (const [adrId, violations] of violationsByADR) {
+      const adrTitle = violations[0].adrTitle;
+      lines.push(`## ${adrId}: ${adrTitle}`);
+      
+      for (const violation of violations) {
+        lines.push(`### ${violation.constraint}`);
+        for (const loc of violation.violations) {
+          // Format for GitHub Actions annotations
+          lines.push(`::error file=${loc.file},line=${loc.line}::${violation.constraint} - ${loc.snippet}`);
+        }
+      }
+      lines.push('');
+    }
+
+    // Add remediation suggestions
+    const remediations = this.generateRemediationSuggestions(report);
+    if (remediations.length > 0) {
+      lines.push(`## Remediation Steps`);
+      for (const remediation of remediations) {
+        lines.push(`### ${remediation.adrId}: ${remediation.action}`);
+        lines.push(`Priority: ${remediation.priority.toUpperCase()}`);
+        lines.push(`Affected files: ${remediation.affectedFiles.length}`);
+        lines.push('');
+        lines.push('Steps:');
+        for (let i = 0; i < remediation.steps.length; i++) {
+          lines.push(`${i + 1}. ${remediation.steps[i]}`);
+        }
+        lines.push('');
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Format a single violation for detailed display
+   * 
+   * Requirements: 8.3
+   */
+  formatViolation(violation: DriftViolation): string {
+    const lines: string[] = [];
+    
+    lines.push(`┌─ ADR Violation ─────────────────────────────────`);
+    lines.push(`│ ADR ID:     ${violation.adrId}`);
+    lines.push(`│ ADR Title:  ${violation.adrTitle}`);
+    lines.push(`│ Constraint: ${violation.constraint}`);
+    lines.push(`│`);
+    lines.push(`│ Code Locations (${violation.violations.length}):`);
+    
+    for (const loc of violation.violations) {
+      lines.push(`│   📄 ${loc.file}`);
+      lines.push(`│      Line ${loc.line}: ${loc.snippet}`);
+    }
+    
+    lines.push(`└──────────────────────────────────────────────────`);
+    
+    return lines.join('\n');
+  }
+
+  /**
+   * Get detailed report with all information
+   * 
+   * Requirements: 8.3, 8.5
+   */
+  getDetailedReport(report: DriftReport): DetailedDriftReport {
+    const summary = this.getSummary(report);
+    const remediations = this.generateRemediationSuggestions(report);
+    
+    return {
+      summary: {
+        totalViolations: summary.totalViolations,
+        affectedADRs: summary.affectedADRs,
+        affectedFiles: summary.affectedFiles,
+        timestamp: new Date().toISOString()
+      },
+      violations: report.violations.map(v => ({
+        adrId: v.adrId,
+        adrTitle: v.adrTitle,
+        constraint: v.constraint,
+        codeLocations: v.violations.map(loc => ({
+          file: loc.file,
+          line: loc.line,
+          snippet: loc.snippet
+        }))
+      })),
+      remediations,
+      suggestions: report.suggestions
+    };
   }
 
   /**

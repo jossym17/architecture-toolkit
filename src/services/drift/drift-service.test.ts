@@ -615,4 +615,183 @@ describe('DriftDetectionService - Reporting', () => {
       expect(summary.affectedFiles).toContain('src/app.ts');
     });
   });
+
+  /**
+   * Tests for drift reporting functionality
+   * 
+   * Requirements: 8.3, 8.5
+   */
+  describe('formatReportForCI - unit tests', () => {
+    it('should format empty report for CI correctly', () => {
+      const service = new DriftDetectionService();
+      const report = { violations: [], suggestions: [] };
+      
+      const formatted = service.formatReportForCI(report);
+      
+      expect(formatted).toBe('✅ No architecture drift detected.');
+    });
+
+    it('should format report with violations for CI with annotations', () => {
+      const service = new DriftDetectionService();
+      const report = {
+        violations: [{
+          adrId: 'ADR-0001',
+          adrTitle: 'Use PostgreSQL',
+          constraint: 'Forbidden import: mysql',
+          violations: [{
+            file: 'src/db.ts',
+            line: 5,
+            snippet: "import mysql from 'mysql2';"
+          }]
+        }],
+        suggestions: ['Remove usage of mysql']
+      };
+      
+      const formatted = service.formatReportForCI(report);
+      
+      // Should contain CI-friendly error annotation format
+      expect(formatted).toContain('❌ Architecture Drift Detected');
+      expect(formatted).toContain('ADR-0001');
+      expect(formatted).toContain('Use PostgreSQL');
+      expect(formatted).toContain('::error file=src/db.ts,line=5::');
+      expect(formatted).toContain('Remediation Steps');
+    });
+  });
+
+  describe('formatViolation - unit tests', () => {
+    it('should format a single violation with detailed information', () => {
+      const service = new DriftDetectionService();
+      const violation = {
+        adrId: 'ADR-0001',
+        adrTitle: 'Use PostgreSQL',
+        constraint: 'Forbidden import: mysql',
+        violations: [
+          { file: 'src/db.ts', line: 5, snippet: "import mysql from 'mysql2';" },
+          { file: 'src/repo.ts', line: 10, snippet: "import { Connection } from 'mysql';" }
+        ]
+      };
+      
+      const formatted = service.formatViolation(violation);
+      
+      expect(formatted).toContain('ADR ID:     ADR-0001');
+      expect(formatted).toContain('ADR Title:  Use PostgreSQL');
+      expect(formatted).toContain('Constraint: Forbidden import: mysql');
+      expect(formatted).toContain('Code Locations (2)');
+      expect(formatted).toContain('src/db.ts');
+      expect(formatted).toContain('Line 5');
+      expect(formatted).toContain('src/repo.ts');
+      expect(formatted).toContain('Line 10');
+    });
+  });
+
+  describe('generateRemediationSuggestions - unit tests', () => {
+    it('should generate remediation suggestions for forbidden imports', () => {
+      const service = new DriftDetectionService();
+      const report = {
+        violations: [{
+          adrId: 'ADR-0001',
+          adrTitle: 'Use PostgreSQL',
+          constraint: 'Forbidden import: mysql',
+          violations: [
+            { file: 'src/db.ts', line: 5, snippet: 'import mysql' },
+            { file: 'src/repo.ts', line: 10, snippet: 'import mysql' }
+          ]
+        }],
+        suggestions: []
+      };
+      
+      const remediations = service.generateRemediationSuggestions(report);
+      
+      expect(remediations).toHaveLength(1);
+      expect(remediations[0].adrId).toBe('ADR-0001');
+      expect(remediations[0].adrTitle).toBe('Use PostgreSQL');
+      expect(remediations[0].action).toContain("Remove all usages of 'mysql'");
+      expect(remediations[0].affectedFiles).toContain('src/db.ts');
+      expect(remediations[0].affectedFiles).toContain('src/repo.ts');
+      expect(remediations[0].steps.length).toBeGreaterThan(0);
+    });
+
+    it('should set priority based on number of violations', () => {
+      const service = new DriftDetectionService();
+      
+      // Low priority (2 or fewer violations)
+      const lowReport = {
+        violations: [{
+          adrId: 'ADR-0001',
+          adrTitle: 'Test',
+          constraint: 'Forbidden import: test',
+          violations: [
+            { file: 'src/a.ts', line: 1, snippet: 'import test' },
+            { file: 'src/b.ts', line: 1, snippet: 'import test' }
+          ]
+        }],
+        suggestions: []
+      };
+      
+      // High priority (more than 5 violations)
+      const highReport = {
+        violations: [{
+          adrId: 'ADR-0001',
+          adrTitle: 'Test',
+          constraint: 'Forbidden import: test',
+          violations: [
+            { file: 'src/a.ts', line: 1, snippet: 'import test' },
+            { file: 'src/b.ts', line: 1, snippet: 'import test' },
+            { file: 'src/c.ts', line: 1, snippet: 'import test' },
+            { file: 'src/d.ts', line: 1, snippet: 'import test' },
+            { file: 'src/e.ts', line: 1, snippet: 'import test' },
+            { file: 'src/f.ts', line: 1, snippet: 'import test' }
+          ]
+        }],
+        suggestions: []
+      };
+      
+      const lowRemediations = service.generateRemediationSuggestions(lowReport);
+      const highRemediations = service.generateRemediationSuggestions(highReport);
+      
+      expect(lowRemediations[0].priority).toBe('low');
+      expect(highRemediations[0].priority).toBe('high');
+    });
+  });
+
+  describe('getDetailedReport - unit tests', () => {
+    it('should return detailed report with all information', () => {
+      const service = new DriftDetectionService();
+      const report = {
+        violations: [{
+          adrId: 'ADR-0001',
+          adrTitle: 'Use PostgreSQL',
+          constraint: 'Forbidden import: mysql',
+          violations: [{
+            file: 'src/db.ts',
+            line: 5,
+            snippet: "import mysql from 'mysql2';"
+          }]
+        }],
+        suggestions: ['Remove usage of mysql']
+      };
+      
+      const detailed = service.getDetailedReport(report);
+      
+      // Check summary
+      expect(detailed.summary.totalViolations).toBe(1);
+      expect(detailed.summary.affectedADRs).toContain('ADR-0001');
+      expect(detailed.summary.affectedFiles).toContain('src/db.ts');
+      expect(detailed.summary.timestamp).toBeTruthy();
+      
+      // Check violations
+      expect(detailed.violations).toHaveLength(1);
+      expect(detailed.violations[0].adrId).toBe('ADR-0001');
+      expect(detailed.violations[0].codeLocations).toHaveLength(1);
+      expect(detailed.violations[0].codeLocations[0].file).toBe('src/db.ts');
+      expect(detailed.violations[0].codeLocations[0].line).toBe(5);
+      
+      // Check remediations
+      expect(detailed.remediations).toHaveLength(1);
+      expect(detailed.remediations[0].steps.length).toBeGreaterThan(0);
+      
+      // Check suggestions
+      expect(detailed.suggestions).toContain('Remove usage of mysql');
+    });
+  });
 });
