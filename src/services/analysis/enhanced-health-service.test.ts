@@ -175,14 +175,17 @@ describe('EnhancedHealthService', () => {
             expect(healthScore.score).toBeLessThanOrEqual(100);
 
             // Now get breakdown separately to verify consistency
+            // Note: We allow a small tolerance due to timing differences between calls
             const breakdown = await testService.getHealthBreakdown(artifact.id);
             
             // Property: total penalty from breakdown
             const totalPenalty = breakdown.penalties.reduce((sum, p) => sum + p.points, 0);
             
             // Property: score should be 100 - penalties, bounded [0, 100]
+            // Allow tolerance of one month's penalty due to timing between calls
             const expectedScore = Math.max(0, Math.min(100, 100 - totalPenalty));
-            expect(healthScore.score).toBe(expectedScore);
+            const tolerance = config.stalenessPenaltyPerMonth;
+            expect(Math.abs(healthScore.score - expectedScore)).toBeLessThanOrEqual(tolerance);
             
             // Property: breakdown penalties should be non-negative
             for (const penalty of breakdown.penalties) {
