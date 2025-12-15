@@ -1,7 +1,10 @@
 // Audit and Compliance commands for Architecture Documentation Toolkit CLI
 
 import { Command } from 'commander';
-import { AuditService } from '../../services/audit/audit-service.js';
+import {
+  AuditService,
+  ComplianceFramework,
+} from '../../services/audit/audit-service.js';
 import { FileStore } from '../../services/storage/file-store.js';
 import { ConfigService } from '../../services/config/config-service.js';
 import { handleError } from '../utils/error-handler.js';
@@ -172,4 +175,117 @@ async function handleAllAuditEntries(
       }
     }
   }
+}
+
+/**
+ * Compliance command options
+ */
+interface ComplianceOptions {
+  framework?: string;
+  json?: boolean;
+  path?: string;
+}
+
+/**
+ * Registers the compliance command
+ *
+ * Supports:
+ * - arch compliance --framework <framework> - Check compliance against a framework
+ *
+ * Requirements: 10.4, 10.5
+ */
+export function registerComplianceCommand(program: Command): Command {
+  return program
+    .command('compliance')
+    .description('Check compliance against a framework (SOC2, ISO27001, HIPAA)')
+    .option(
+      '-f, --framework <framework>',
+      'Compliance framework (SOC2, ISO27001, HIPAA)',
+      'SOC2'
+    )
+    .option('--json', 'Output results as JSON')
+    .option('-p, --path <path>', 'Base path for .arch directory', process.cwd())
+    .action(async (options: ComplianceOptions) => {
+      try {
+        const basePath = options.path || process.cwd();
+        const archPath = `${basePath}/.arch`;
+
+        const fileStore = new FileStore({ baseDir: archPath });
+        await fileStore.initialize();
+        const configService = new ConfigService({ baseDir: archPath });
+        const auditService = new AuditService({
+          baseDir: archPath,
+          fileStore,
+          configService,
+        });
+
+        const framework = (options.framework?.toUpperCase() ||
+          'SOC2') as ComplianceFramework;
+        const validFrameworks: ComplianceFramework[] = [
+          'SOC2',
+          'ISO27001',
+          'HIPAA',
+        ];
+
+        if (!validFrameworks.includes(framework)) {
+          console.error(
+            `Invalid framework: ${options.framework}. Valid options: ${validFrameworks.join(', ')}`
+          );
+          process.exit(1);
+        }
+
+        const report = await auditService.checkCompliance(framework);
+
+        if (options.json) {
+          // eslint-disable-next-line no-console
+          console.log(JSON.stringify(report, null, 2));
+        } else {
+          // eslint-disable-next-line no-console
+          console.log(`\n${framework} Compliance Report`);
+          // eslint-disable-next-line no-console
+          console.log('='.repeat(50));
+          // eslint-disable-next-line no-console
+          console.log(
+            `\nOverall Status: ${report.compliant ? '✓ COMPLIANT' : '✗ NON-COMPLIANT'}`
+          );
+
+          // eslint-disable-next-line no-console
+          console.log('\nControl Mappings:');
+          for (const mapping of report.mappings) {
+            const statusIcon =
+              mapping.status === 'covered'
+                ? '✓'
+                : mapping.status === 'partial'
+                  ? '◐'
+                  : '✗';
+            // eslint-disable-next-line no-console
+            console.log(
+              `  ${statusIcon} ${mapping.controlId}: ${mapping.controlName}`
+            );
+            if (mapping.artifacts.length > 0) {
+              // eslint-disable-next-line no-console
+              console.log(`    Artifacts: ${mapping.artifacts.join(', ')}`);
+            }
+          }
+
+          if (report.gaps.length > 0) {
+            // eslint-disable-next-line no-console
+            console.log('\nGaps & Recommendations:');
+            for (const gap of report.gaps) {
+              // eslint-disable-next-line no-console
+              console.log(`  [${gap.controlId}] ${gap.issue}`);
+              // eslint-disable-next-line no-console
+              console.log(`    → ${gap.recommendation}`);
+            }
+          }
+        }
+
+        // Exit with non-zero code if non-compliant
+        if (!report.compliant) {
+          process.exit(1);
+        }
+      } catch (error) {
+        handleError(error);
+      }
+    });
 }

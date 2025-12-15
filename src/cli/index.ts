@@ -16,6 +16,10 @@ import { registerHooksCommand } from './commands/hooks.js';
 import { registerUpdateCommand } from './commands/update.js';
 import { registerDriftCommand } from './commands/drift.js';
 import { registerImpactCommand } from './commands/impact.js';
+import {
+  registerAuditCommand,
+  registerComplianceCommand,
+} from './commands/audit.js';
 import { verifyCommand } from './commands/verify.js';
 import { exportCommand } from './commands/export.js';
 import { statsCommand } from './commands/stats.js';
@@ -43,6 +47,8 @@ registerHooksCommand(program);
 registerUpdateCommand(program);
 registerDriftCommand(program);
 registerImpactCommand(program);
+registerAuditCommand(program);
+registerComplianceCommand(program);
 program.addCommand(verifyCommand);
 program.addCommand(exportCommand);
 program.addCommand(statsCommand);
